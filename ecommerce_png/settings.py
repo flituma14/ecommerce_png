@@ -11,9 +11,30 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'debug.log'),
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
 
 
 # Quick-start development settings - unsuitable for production
@@ -21,16 +42,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-9p@yks0go5bt+s6e8!h6&hi)6r93*xd1)d!-!mgjwe5$gplat4'
+CSRF_COOKIE_HTTPONLY = True
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
+
+
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -41,17 +67,53 @@ INSTALLED_APPS = [
     'category',
     'accounts',
     'store',
+    'carts',
 ]
 
+
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    #'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+CORS_ALLOW_HEADERS = "*"
+
+CORS_EXPOSE_HEADERS = "*"
+
+CORS_ALLOWED_ORIGINS = [
+    "https://api-uat.kushkipagos.com",
+    "https://kajita-uat.kushkipagos.com",
+    "http://localhost:8080",
+    "http://127.0.0.1:9000",
+    "http://127.0.0.1:8000",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://kajita-uat.kushkipagos.com",
+    "https://api-uat.kushkipagos.com",
+    "http://127.0.0.1:8000",
+]
+
+CORS_ORIGIN_ALLOW_ALL = True  # this allows all domains
+
+#Or to allow specific domains 
+CORS_ORIGIN_WHITELIST = (
+    "https://kajita-uat.kushkipagos.com",
+    "https://api-uat.kushkipagos.com",
+    'http://example.com',
+    'http://127.0.0.1:8000',
+    'http://localhost:8000',
+)
+
+CORS_ALLOW_CREDENTIALS: True
 
 ROOT_URLCONF = 'ecommerce_png.urls'
 
@@ -136,3 +198,5 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
