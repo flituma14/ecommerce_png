@@ -1,60 +1,46 @@
 import http
-from django.shortcuts import get_object_or_404, redirect, render
-from django.template import RequestContext
-from carts.models import Cart, CartItem
-from django.core.exceptions import ObjectDoesNotExist
-from django.views.decorators.csrf import csrf_exempt
-#import requests
-from store.models import Product
+import http.client
 import json
 
-def _request_token_payment(card_holder_name = "", card_number = "", expiry_month = "", expiry_year = "", cvc = ""):
-    import http.client
-    conn = http.client.HTTPSConnection("api-uat.kushkipagos.com")
-    payload = {
-        'card' : {
-            'name' : card_holder_name,
-            'number': card_number,
-            'expiryMonth': expiry_month,
-            'expiryYear': expiry_year,
-            'cvv': cvc,
-        },
-        'totalAmount': 1.1,
-        'currency' : 'USD'
-    }
+from django.shortcuts import get_object_or_404, redirect, render
+from django.core.exceptions import ObjectDoesNotExist
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
 
-    headers = {
-        'Public-Merchant-Id': "b8099f6006c740089b4ed0100ec5f536",
-        'Content-Type': "application/json",
-        'Accept': "application/json"
-    }
-
-    conn.request("POST", "/card/v1/tokens", json.dumps(payload), headers)
-    res = conn.getresponse()
-    data = json.loads(res.read())
-    token = data['token']
-    return token
-
-#@csrf_exempt
-def charge(request):    
-    import http.client
-    conn = http.client.HTTPSConnection("api-uat.kushkipagos.com")
+from carts.models import Cart, CartItem
+from store.models import Product
     
-    card_holder_name = request.POST['card_holder_name']
-    card_number = request.POST['card_number']
-    expiry_month = request.POST['expiry_month']
-    expiry_year = request.POST['expiry_year']
-    cvc = request.POST['cvc']
+
+
+
+@csrf_exempt
+def charge(request, total = 0, sub_total = 0, iva = 0):    
+    conn = http.client.HTTPSConnection("api-uat.kushkipagos.com")
+    token = request.POST['kushkiToken']
     
-    token = _request_token_payment(card_holder_name, card_number, expiry_month, expiry_year, cvc)
+    try:
+        if request.user.is_authenticated:
+            cart_items = CartItem.objects.filter(user = request.user, is_active = True)
+        else:
+            cart = Cart.objects.get(cart_id = _cart_id(request))
+            cart_items = CartItem.objects.filter(cart = cart, is_active = True)
+       
+        for cart_item in cart_items:
+            sub_total += (cart_item.product.price * cart_item.quantity)
+            
+        iva = (12*sub_total)/100
+        
+    except ObjectDoesNotExist:
+        pass
+    
     
     payload = {
         'token' : token,
         'amount': {
             'currency' : 'USD',
-            'subtotalIva' : 0,
-            'subtotalIva0': 8,
-            'iva' : 0,
+            'subtotalIva' : sub_total,
+            'subtotalIva0': 0,
+            'iva' : iva,
             'ice' : 0,
             'extraTaxes':{
                 'iac': 0,
@@ -73,16 +59,16 @@ def charge(request):
             'firstName': 'Freddy',
             'lastName' : 'Lituma',
             'email': 'fflituma14@gmail.com',
-            'documentType': 'DNI',
-            'documentNumber': 'ABCD123456EF',
-            'phoneNumber': '+5931111111',
+            'documentType': 'CI',
+            'documentNumber': '0922869623',
+            'phoneNumber': '+5930984762551',
         },
         'orderDetails':{
             'siteDomain' : 'www.example.com',
             'shippingDetails': {
                 'name' : 'Freddy Lituma',
                 'phone': '+5934364265472',
-                'addres': 'Guayaquil',
+                'address1': 'Guayaquil',
                 'city': 'Guayaquil',
                 'region': 'Costa',
                 'country': 'Ecuador',
@@ -90,7 +76,7 @@ def charge(request):
             'billingDetails':{
                 'name' : 'Freddy Lituma',
                 'phone': '+59334532654',
-                'addres': 'Centro 123',
+                'address1': 'Centro 123',
                 'city': 'Guayaquil',
                 'region': 'Costa',
                 'country': 'Ecuador',
@@ -101,24 +87,17 @@ def charge(request):
                 {
                     'id': '1234',
                     'title': 'xyz',
-                    'price' : '1400',
+                    'price' : 1.1,
                     'sku': '121313',
                     'quantity': 1,
                 }
             ]
-        },
-        'threeDomainSecure':{
-            'cavv' :'AAABBoVBaZKAR3BkdkFpELpWIiE=',
-            'eci': '07',
-            'xid': 'NEpab1F1MEdtaWJ2bEY3ckYxQzE=',
-            'specificationVersion': '2.2.0',
-            'acceptRisk': True
         }
     }
     
     
     headers = {
-        'Public-Merchant-Id': "b8099f6006c740089b4ed0100ec5f536",
+        'Private-Merchant-Id': "be47550cb6d0483ca3f2b150eb04e96f",
         'Content-Type': "application/json",
         'Accept': "application/json"
     }
@@ -139,25 +118,28 @@ def charge(request):
     return redirect('cart')
 
 
-
-def cajita(request, total = 0, tax =0, grand_total =0, cart_items = None):
+@login_required(login_url='login')
+def cajita(request, sub_total = 0, iva =0, total =0, cart_items = None):
     try:
-        cart = Cart.objects.get(cart_id = _cart_id(request))
-        cart_items = CartItem.objects.filter(cart = cart, is_active = True)
-
+        if request.user.is_authenticated:
+            cart_items = CartItem.objects.filter(user = request.user, is_active = True)
+        else:
+            cart = Cart.objects.get(cart_id = _cart_id(request))
+            cart_items = CartItem.objects.filter(cart = cart, is_active = True)
+       
         for cart_item in cart_items:
-            total += (cart_item.product.price * cart_item.quantity)
+            sub_total += (cart_item.product.price * cart_item.quantity)
             
-        tax = (2*total)/100
-        grand_total = total + tax
+        iva = (12*sub_total)/100
+        total = sub_total + iva
         
     except ObjectDoesNotExist:
         pass
     
     context = {
-        'sub_total' : total, 
-        'tax' : tax,
-        'grand_total': grand_total,
+        'sub_total' : sub_total, 
+        'iva' : iva,
+        'total': total,
     }
     
     return render(request, 'store/cajita.html', context)
@@ -168,73 +150,145 @@ def _cart_id(request):
         cart = request.session.create()
     return cart
 
+
+@login_required(login_url='login')
 def add_cart(request, product_id):
     product = Product.objects.get(id=product_id)
+
+    current_user = request.user
+
+    print(current_user)
+
+    if current_user.is_authenticated:
+        #aqui en este bloque agregaremos la logica del carrito de compras cuando
+        #el usuario esta autenticado
         
-    try:
-        cart = Cart.objects.get(cart_id=_cart_id(request))
-    except Cart.DoesNotExist:
-        cart = Cart.objects.create(
-            cart_id = _cart_id(request)
-        )
-    cart.save()
+        is_cart_item_exists = CartItem.objects.filter(product=product, user=current_user).exists()
 
-    try:
-        cart_item = CartItem.objects.get(product= product, cart = cart)
-        cart_item.quantity += 1
-        cart_item.save()
-    except CartItem.DoesNotExist:
-        cart_item = CartItem.objects.create(
-            product = product,
-            quantity = 1,
-            cart = cart,
-        )
-    
-    cart_item.save()  
-    return redirect('cart')
+        if is_cart_item_exists:
+            cart_item = CartItem.objects.get(product = product, user = current_user)
+            cart_item.quantity += 1
+            cart_item.save()
+        else:
+            cart_item = CartItem.objects.create(
+                product = product,
+                quantity = 1,
+                user = current_user,
+            )
+            cart_item.save()
 
-def remove_cart(request, product_id):
-    cart = Cart.objects.get(cart_id = _cart_id(request))
-    product = get_object_or_404(Product, id = product_id)
-    cart_item = CartItem.objects.get(product = product, cart = cart)
+        return redirect('cart')
 
-    if cart_item.quantity>1:
-        cart_item.quantity -= 1
-        cart_item.save()
     else:
-        cart_item.delete()
+        try:
+            cart = Cart.objects.get(cart_id=_cart_id(request))
+        except Cart.DoesNotExist:
+            cart = Cart.objects.create(
+                cart_id = _cart_id(request)
+            )
+        cart.save()
 
+        is_cart_item_exists = CartItem.objects.filter(product=product, cart=cart).exists()
+        if is_cart_item_exists:
+            cart_item = CartItem.objects.get(product=product, cart=cart)
+            cart_item.quantity += 1
+            cart_item.save()
+        else:
+            cart_item = CartItem.objects.create(
+                product = product,
+                quantity = 1,
+                cart = cart,
+            )
+            
+        return redirect('cart')
+
+
+
+@login_required(login_url='login')
+def remove_cart(request, product_id, cart_item_id):
+    product = get_object_or_404(Product, id=product_id)
+    try:
+        if request.user.is_authenticated:
+            cart_item = CartItem.objects.get(product=product, user=request.user, id=cart_item_id)
+        else:
+            cart = Cart.objects.get(cart_id=_cart_id(request))
+            cart_item = CartItem.objects.get(product=product, cart=cart, id=cart_item_id)
+        if cart_item.quantity > 1:
+            cart_item.quantity -= 1
+            cart_item.save()
+        else:
+            cart_item.delete()
+    except:
+        pass
+    return redirect('cart')
+
+@login_required(login_url='login')
+def remove_cart_item(request, product_id, cart_item_id):
+    product = get_object_or_404(Product, id=product_id)
+
+    if request.user.is_authenticated:
+        cart_item = CartItem.objects.get(product=product, user=request.user, id=cart_item_id)
+    else:
+        cart = Cart.objects.get(cart_id=_cart_id(request))
+        cart_item = CartItem.objects.get(product=product, cart=cart, id=cart_item_id)
+
+    cart_item.delete()
     return redirect('cart')
 
 
-def remove_cart_item(request, product_id):
-    cart = Cart.objects.get(cart_id = _cart_id(request))
-    product = get_object_or_404(Product, id = product_id)
-    cart_item = CartItem.objects.get(product = product, cart = cart)
-    cart_item.delete()
-    return
-
-def cart(request, grand_total = 0, total = 0, tax = 0, quantity = 0, cart_items = None):
+@login_required(login_url='login')
+def cart(request, total = 0, sub_total = 0, iva = 0, quantity = 0, cart_items = None):
     try:
-        cart = Cart.objects.get(cart_id = _cart_id(request))
-        cart_items = CartItem.objects.filter(cart = cart, is_active = True)
+        if request.user.is_authenticated:
+            cart_items = CartItem.objects.filter(user = request.user, is_active = True)
+        else:
+            cart = Cart.objects.get(cart_id = _cart_id(request))
+            cart_items = CartItem.objects.filter(cart = cart, is_active = True)
 
         for cart_item in cart_items:
-            total += (cart_item.product.price * cart_item.quantity)
+            sub_total += (cart_item.product.price * cart_item.quantity)
             quantity += cart_item.quantity
     
-        tax = (2*total)/100
-        grand_total = total + tax
+        iva = (12 * sub_total)/100
+        total = sub_total + iva
         
     except ObjectDoesNotExist:
         pass
     
     context = {
-        'total' : total,
         'quantity': quantity,
         'cart_items': cart_items,
-        'tax' : tax,
-        'grand_total': grand_total,
+        'sub_total' : sub_total,
+        'iva' : iva,
+        'total': total,
     }
     
     return render(request, 'store/cart.html', context)
+
+
+@login_required(login_url='login')
+def checkout(request, sub_total = 0):
+    try:
+        if request.user.is_authenticated:
+            cart_items = CartItem.objects.filter(user = request.user, is_active = True)
+        else:
+            cart = Cart.objects.get(cart_id = _cart_id(request))
+            cart_items = CartItem.objects.filter(cart = cart, is_active = True)
+       
+        for cart_item in cart_items:
+            sub_total += (cart_item.product.price * cart_item.quantity)
+            
+        iva = (12*sub_total)/100
+        total = sub_total + iva
+        
+    except ObjectDoesNotExist:
+        pass
+    
+    context = {
+        'cart_items' : cart_items,
+        'sub_total' : sub_total, 
+        'iva' : iva,
+        'total': total,
+    }
+    
+    return render(request, 'store/checkout.html', context)

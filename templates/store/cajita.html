@@ -6,21 +6,12 @@
 <section class="section-content padding-y bg">
     <div class="container">
         {% comment %} <h1>{{grand_total}}</h1> {% endcomment %}
-        {% comment %} <script src="https://cdn.kushkipagos.com/kushki-checkout.js"></script> {% endcomment %}
+        <script src="https://cdn.kushkipagos.com/kushki-checkout.js"></script>
         
         <div class="row text-center">  
             <div class="col-md-12 text-center">  
                 <form  name="my-form" id="my-form" method="post" action="{% url 'charge' %}">
                     {% csrf_token %}
-                    
-                    <input placeholder="Full Name" type="text" name="card_holder_name">
-                    <input placeholder="Card Number" type="text" name="card_number">
-                      
-                    <input placeholder="MM" type="text" name="expiry_month">
-                    <input placeholder="YY" type="text" name="expiry_year">
-                    <input placeholder="CVC" type="text" name="cvc">
-                    
-                    <button type-"submit">Pagar</button>  
                 </form>
             </div>
         </div>   
@@ -29,20 +20,23 @@
     <!-- ========================= SECTION CONTENT END// ========================= -->
 
     <script>
+        
+
         $(document).ready(function(){
-            /*var kushki = new KushkiCheckout({
+            
+            var kushki = new KushkiCheckout({
 			    kformId: "JgIf6UfSO",
 			    form: "my-form",
 			    publicMerchantId: "b8099f6006c740089b4ed0100ec5f536",// Reemplaza esto por tucredencial pública
 			    inTestEnvironment: true,
 			    amount: {
-			     subtotalIva: 0,
-			     iva: 0,
-			     subtotalIva0: 1,
+			     subtotalIva: {{sub_total}},
+			     iva: {{iva}},
+			     subtotalIva0: 0,
 			     }
     		});
                 
-            $('iframe').css('height','900px');
+            $('iframe').css('height','700px');
             
             /*$('#my-form').submit(function(event) {
                 alert('Submit blocked!');

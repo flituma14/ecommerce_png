@@ -7,7 +7,7 @@
 <div class="container">
 
 <div class="intro-banner-wrap">
-	<img src="{% static 'images/banners/banner01.jpg' %}" class="img-fluid rounded">
+	<img src="{% static 'images/banners/online-payment-banner.jpg' %}" class="img-fluid rounded">
 </div>
 
 </div> <!-- container //  -->
@@ -20,7 +20,7 @@
 
 <header class="section-heading">
 	<a href="./store.html" class="btn btn-outline-primary float-right">Ver Todo</a>
-	<h3 class="section-title">Productos populares</h3>
+	<h3 class="section-title">Ordenes de pago</h3>
 </header><!-- sect-heading -->
 
 	
@@ -31,7 +31,8 @@
 		<div class="card card-product-grid">
 			<a href="./product-detail.html" class="img-wrap"> <img src="{{ product.images.url  }}"> </a>
 			<figcaption class="info-wrap">
-				<a href="./product-detail.html" class="title">{{product.product_name}}</a>
+				<span>{{product.product_name}}</span>	
+				{% comment %} <a href="./product-detail.html" class="title">{{product.product_name}}</a> {% endcomment %}
 				<div class="price mt-1">{{product.price}}</div> <!-- price-wrap.// -->
 			</figcaption>
 		</div>

@@ -1,27 +1,5 @@
 {% load static %}
 <header class="section-header">
-    {% comment %} <nav class="navbar p-md-0 navbar-expand-sm navbar-light border-bottom">
-    <div class="container">
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTop4" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarTop4">
-        <ul class="navbar-nav mr-auto">
-            <li class="nav-item dropdown">
-                 <a href="#" class="nav-link">   Espanol </a>
-                
-            </li>
-            <li class="nav-item dropdown">
-                <a href="#" class="nav-link"> USD </a>
-            </li>
-        </ul>
-        <ul class="navbar-nav">
-            <li><a href="#" class="nav-link"> <i class="fa fa-envelope"></i> Email </a></li>
-            <li><a href="#" class="nav-link"> <i class="fa fa-phone"></i> Llamanos</a></li>
-        </ul> <!-- list-inline //  -->
-      </div> <!-- navbar-collapse .// -->
-    </div> <!-- container //  -->
-    </nav> {% endcomment %}
     
     <section class="header-main border-bottom">
         <div class="container">
@@ -30,28 +8,13 @@
             {% comment %} <a href="./" class="brand-wrap">
                 <img class="logo" src="{% static './images/logo01.png' %}">
             </a> <!-- brand-wrap.// --> {% endcomment %}
-            <h2>DPNG</h2>
+            <h2>PNG</h2>
             <span>Pagos online</span>    
         </div>
-        <div class="col-lg col-sm col-md col-6 flex-grow-0">
-            
-            
-            {% comment %} <div class="category-wrap dropdown d-inline-block float-right">
-                <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"> 
-                    <i class="fa fa-bars"></i> Categorias 
-                </button>
-                <div class="dropdown-menu">
-                    <a class="dropdown-item" href="#">Electronica / Tv, Audio </a>
-                    <a class="dropdown-item" href="#">Auto / Transporte</a>
-                    <a class="dropdown-item" href="#">Ropa Moda / Textiles </a>
-                    <a class="dropdown-item" href="#">Casa & Jardin / Construccion / Luces </a>
-                    <a class="dropdown-item" href="#">Computadoras / Telefonos </a> 
-                </div>
-            </div>
-         {% endcomment %}
         
+        <div class="col-lg col-sm col-md col-6 flex-grow-0">
         </div> <!-- col.// -->
-        {% comment %} <a href="./store.html" class="btn btn-outline-primary">Tienda</a> {% endcomment %}
+        
         <div class="col-lg  col-md-6 col-sm-12 col">
             <form action="#" class="search">
                 <div class="input-group w-100">
@@ -68,16 +31,26 @@
         
         <div class="col-lg-3 col-sm-6 col-8 order-2 order-lg-3">
                     <div class="d-flex justify-content-end mb-3 mb-lg-0">
+                        {% if user.id is None %}
                         <div class="widget-header">
                             <small class="title text-muted">Bienvenido visitante!</small>
                             <div> 
-                                <a href="./signin.html">Login</a> <span class="dark-transp"> | </span>
-                                <a href="./register.html"> Registrar</a>
+                                <a href="{% url 'login' %}">Login</a> <span class="dark-transp"> | </span>
+                                <a href="{% url 'register' %}"> Registrar</a>
                             </div>
                         </div>
-                        <a href="./cart.html" class="widget-header pl-3 ml-3">
+                        {% else %}
+                        <div class="widget-header">
+                            <small class="title text-muted">Bienvenido {{user.first_name}}</small>
+                            <div> 
+                                <a href="{% url 'logout' %}"> Cerrar sesión</a>
+                            </div>
+                        </div>
+                        
+                        {% endif %}
+                        <a href="{% url 'cart' %}" class="widget-header pl-3 ml-3">
                             <div class="icon icon-sm rounded-circle border"><i class="fa fa-shopping-cart"></i></div>
-                            <span class="badge badge-pill badge-danger notify">0</span>
+                            <span class="badge badge-pill badge-danger notify">{{cart_count}}</span>
                         </a>
                     </div> <!-- widgets-wrap.// -->
                 </div> <!-- col.// -->
